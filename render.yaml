@@ -2,16 +2,16 @@ services:
   - type: web
     name: cryptogame-web
     env: python
-    buildCommand: |
-      pip install -r constraints.txt
-      pip install -r requirements.txt
+    pythonVersion: "3.10.13"
+    buildCommand: pip install -r constraints.txt && pip install -r requirements.txt
+    startCommand: gunicorn --worker-tmp-dir /dev/shm --workers 2 --threads 4 --worker-class gthread app:app
 
   - type: worker
     name: cryptogame-bot
     env: python
-    buildCommand: |
-      pip install -r constraints.txt
-      pip install -r requirements.txt
+    pythonVersion: "3.10.13"
+    buildCommand: pip install -r constraints.txt && pip install -r requirements.txt
+    startCommand: python bot.py
 
 jobs:
   - type: cron
