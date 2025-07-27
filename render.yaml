@@ -3,21 +3,16 @@ services:
     name: cryptogame-web
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python app.py
+    # Remove startCommand and Render will auto-use Procfile's "web" process
 
   - type: worker
     name: cryptogame-bot
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python bot.py
+    # Remove startCommand and Render will auto-use Procfile's "worker" process
 
 jobs:
   - type: cron
     name: process-withdrawals
-    schedule: "*/30 * * * *"  # Every 30 minutes
-    buildCommand: pip install -r requirements.txt
+    schedule: "*/30 * * * *"
     runCommand: python scripts/process_withdrawals.py
-    envVars:
-      - key: FIREBASE_CREDS_JSON
-        value: your_firebase_json
-      # Add other required env vars

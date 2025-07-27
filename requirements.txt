@@ -10,3 +10,4 @@ waitress
 schedule
 mpesa-python-daraja
 paypalrestsdk  # Add PayPal SDK
+gunicorn==21.2.0
