@@ -7,14 +7,19 @@ users_ref = None
 quests_ref = None
 ads_ref = None
 
-def initialize_firebase(creds_path):
-    global db, users_ref, quests_ref, ads_ref
-    cred = credentials.Certificate(creds_path)
+import os
+import json
+import firebase_admin
+from firebase_admin import credentials
+
+def initialize_firebase():
+    cred_json = os.getenv("FIREBASE_CREDS_JSON")
+    if not cred_json:
+        raise ValueError("Firebase credentials not found in environment")
+    
+    cred_dict = json.loads(cred_json)
+    cred = credentials.Certificate(cred_dict)
     firebase_admin.initialize_app(cred)
-    db = firestore.client()
-    users_ref = db.collection('users')
-    quests_ref = db.collection('quests')
-    ads_ref = db.collection('ads')
 
 # User operations
 def get_user_ref(user_id: int):

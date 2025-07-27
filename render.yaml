@@ -5,13 +5,13 @@ services:
     buildCommand: |
       pip install -r constraints.txt
       pip install -r requirements.txt
-    # Remove startCommand and Render will auto-use Procfile's "web" process
 
   - type: worker
     name: cryptogame-bot
     env: python
-    buildCommand: pip install -r requirements.txt
-    # Remove startCommand and Render will auto-use Procfile's "worker" process
+    buildCommand: |
+      pip install -r constraints.txt
+      pip install -r requirements.txt
 
 jobs:
   - type: cron
