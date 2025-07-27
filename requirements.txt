@@ -1,0 +1,12 @@
+# Remove stripe
+flask
+python-telegram-bot
+python-dotenv
+requests
+nanopy
+firebase-admin
+google-cloud-firestore
+waitress
+schedule
+mpesa-python-daraja
+paypalrestsdk  # Add PayPal SDK
