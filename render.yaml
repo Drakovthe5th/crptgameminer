@@ -2,7 +2,9 @@ services:
   - type: web
     name: cryptogame-web
     env: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: |
+      pip install -r constraints.txt
+      pip install -r requirements.txt
     # Remove startCommand and Render will auto-use Procfile's "web" process
 
   - type: worker

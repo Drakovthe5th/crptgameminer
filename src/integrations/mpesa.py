@@ -1,18 +1,19 @@
-from mpesa_python_daraja import mpesa
-from config import Config
+# src/integrations/mpesa.py
+from mpesa.api import MpesaEnvironment, Mpesa
 
 def initialize_mpesa():
-    mpesa.configure(
+    env = MpesaEnvironment(
+        sandbox=Config.MPESA_SANDBOX,
         consumer_key=Config.MPESA_CONSUMER_KEY,
-        consumer_secret=Config.MPESA_CONSUMER_SECRET,
-        environment='sandbox'  # or 'production'
+        consumer_secret=Config.MPESA_CONSUMER_SECRET
     )
+    return Mpesa(env)
 
 def process_mpesa_withdrawal(phone: str, amount: float):
-    response = mpesa.stk_push(
+    mpesa = initialize_mpesa()
+    return mpesa.stk_push(
         phone_number=phone,
         amount=amount,
         account_reference="CryptoGameBot",
         transaction_desc="Game rewards withdrawal"
     )
-    return response

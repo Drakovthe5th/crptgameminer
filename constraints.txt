@@ -1,0 +1,1 @@
+--constraint https://raw.githubusercontent.com/python-telegram-bot/ptbcontrib/main/ptbcontrib_requirements.txt

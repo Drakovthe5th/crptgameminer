@@ -1,13 +1,12 @@
-# Remove stripe
-flask
-python-telegram-bot
-python-dotenv
-requests
-nanopy
-firebase-admin
-google-cloud-firestore
-waitress
-schedule
-mpesa-python-daraja
-paypalrestsdk  # Add PayPal SDK
+flask==3.0.3
+python-telegram-bot==21.1.1
+python-dotenv==1.0.1
+requests==2.31.0
+nanopy==4.0.0
+firebase-admin==6.2.0
+google-cloud-firestore==2.15.0
+waitress==3.0.1
+schedule==1.2.1
+mpesa-python-daraja==0.4.0
+paypalrestsdk==1.13.1
 gunicorn==21.2.0
