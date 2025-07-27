@@ -1,9 +1,9 @@
-# src/integrations/mpesa.py
 from mpesa.api import MpesaEnvironment, Mpesa
+from config import Config
 
 def initialize_mpesa():
     env = MpesaEnvironment(
-        sandbox=Config.MPESA_SANDBOX,
+        sandbox=True,  # Set to False for production
         consumer_key=Config.MPESA_CONSUMER_KEY,
         consumer_secret=Config.MPESA_CONSUMER_SECRET
     )

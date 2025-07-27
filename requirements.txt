@@ -7,6 +7,6 @@ firebase-admin==6.2.0
 google-cloud-firestore==2.15.0
 waitress==3.0.1
 schedule==1.2.1
-mpesa-python-daraja==0.4.0
+python-mpesa==0.4.1  # Replace mpesa-python-daraja
 paypalrestsdk==1.13.1
 gunicorn==21.2.0
