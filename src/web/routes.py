@@ -161,3 +161,50 @@ def configure_routes(app):
         except Exception as e:
             logger.error(f"PayPal webhook error: {str(e)}")
             return jsonify({'status': 'error'}), 500
+        
+        @app.route('/mpesa-callback', methods=['POST'])
+    def mpesa_callback():
+        """
+        Handle M-Pesa payment callback
+        Sample payload:
+        {
+            "Result": {
+                "ResultType": 0,
+                "ResultCode": 0,
+                "ResultDesc": "The service request is processed successfully.",
+                "OriginatorConversationID": "10571-13142494-1",
+                "ConversationID": "AG_20240512_00006f9e6c7b4c1d97c9",
+                "TransactionID": "LGR0000000",
+                "ResultParameters": {
+                    "ResultParameter": [
+                        {"Key": "TransactionAmount", "Value": 10},
+                        {"Key": "TransactionReceipt", "Value": "LGR0000000"},
+                        {"Key": "ReceiverPartyPublicName", "Value": "600978 - Safaricom"},
+                        {"Key": "TransactionCompletedDateTime", "Value": "20240512000000"},
+                        {"Key": "ReceiverParty", "Value": "600978"}
+                    ]
+                }
+            }
+        }
+        """
+        try:
+            data = request.json
+            logger.info(f"M-Pesa callback received: {data}")
+            
+            # Validate transaction
+            if data.get('Result', {}).get('ResultCode') == 0:
+                # Successful transaction
+                params = {item['Key']: item['Value'] for item in 
+                         data['Result']['ResultParameters']['ResultParameter']}
+                
+                logger.info(f"Successful M-Pesa transaction: {params}")
+                return jsonify({"ResultCode": 0, "ResultDesc": "Accepted"})
+            else:
+                # Failed transaction
+                error_desc = data.get('Result', {}).get('ResultDesc', 'Unknown error')
+                logger.error(f"M-Pesa transaction failed: {error_desc}")
+                return jsonify({"ResultCode": 1, "ResultDesc": "Failed"}), 400
+                
+        except Exception as e:
+            logger.error(f"Error processing M-Pesa callback: {str(e)}")
+            return jsonify({"ResultCode": 1, "ResultDesc": "Server error"}), 500
