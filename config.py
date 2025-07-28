@@ -1,27 +1,53 @@
-# config.py
 import os
+import json
+import logging
 
 class Config:
-    # Firebase
-    FIRESTORE_PROJECT = os.getenv("FIRESTORE_PROJECT")
+    # Load environment variables
+    TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
+    NANO_SEED = os.getenv('NANO_SEED')
+    CMC_API_KEY = os.getenv('CMC_API_KEY')
+    REPRESENTATIVE = "nano_3i1aq1cchnmbn9x5rsbap8b15akfh7wj7pwskuzi7ahz8oq6cobd99d4r3b7"  # Default representative
     
-    # Nano
-    NANO_NODE_URL = os.getenv("NANO_NODE_URL", "https://node.somenano.com/proxy")
+    # M-Pesa configuration
+    MPESA_CONSUMER_KEY = os.getenv('MPESA_CONSUMER_KEY')
+    MPESA_CONSUMER_SECRET = os.getenv('MPESA_CONSUMER_SECRET')
+    MPESA_SHORTCODE = os.getenv('MPESA_SHORTCODE', '174379')
+    MPESA_LNM_SHORTCODE = os.getenv('MPESA_LNM_SHORTCODE', '174379')
+    MPESA_LNM_PASSKEY = os.getenv('MPESA_LNM_PASSKEY')
     
-    # M-Pesa
-    MPESA_CONSUMER_KEY = os.getenv("MPESA_CONSUMER_KEY")
-    MPESA_PUBLIC_KEY = os.getenv("MPESA_PUBLIC_KEY")  # New public key
-    MPESA_SHORTCODE = os.getenv("MPESA_SHORTCODE")
-    MPESA_SANDBOX = os.getenv("MPESA_SANDBOX", "True") == "True"  # Default to sandbox
-    PAYPAL_CLIENT_SECRET = os.getenv("PAYPAL_CLIENT_SECRET")
-    PAYPAL_MODE = os.getenv("PAYPAL_MODE", "sandbox")  # or "live"
+    # PayPal configuration
+    PAYPAL_CLIENT_ID = os.getenv('PAYPAL_CLIENT_ID')
+    PAYPAL_CLIENT_SECRET = os.getenv('PAYPAL_CLIENT_SECRET')
+    PAYPAL_MODE = os.getenv('PAYPAL_MODE', 'sandbox')  # sandbox or live
+    PAYPAL_WEBHOOK_ID = os.getenv('PAYPAL_WEBHOOK_ID')
+    
+    # Application settings
     ENV = os.getenv('ENV', 'production')
+    PORT = int(os.getenv('PORT', 10000))
     RENDER_URL = os.getenv('RENDER_EXTERNAL_URL', 'crptgameminer.onrender.com')
-    TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
     
-    # Withdrawal Settings
-    WITHDRAWAL_FEES = {
-        'nano': 0.0,
-        'mpesa': 0.03,  # 3%
-        'equity': 0.02   # 2%
+    # Game configuration
+    MIN_WITHDRAWAL = float(os.getenv('MIN_WITHDRAWAL', 0.1))
+    GAME_COOLDOWN = int(os.getenv('GAME_COOLDOWN', 60))  # minutes
+    REWARDS = {
+        'mining_reward': float(os.getenv('MINING_REWARD', 0.01)),
+        'trivia_reward': float(os.getenv('TRIVIA_REWARD', 0.05)),
+        'puzzle_reward': float(os.getenv('PUZZLE_REWARD', 0.02))
     }
+    
+    # Firebase configuration
+    @property
+    def FIREBASE_CREDS(self):
+        creds_json = os.getenv('FIREBASE_CREDS_JSON')
+        if not creds_json:
+            logging.error("FIREBASE_CREDS_JSON environment variable not set!")
+            return {}
+        try:
+            return json.loads(creds_json)
+        except json.JSONDecodeError:
+            logging.error("Failed to parse FIREBASE_CREDS_JSON")
+            return {}
+
+# Singleton instance
+config = Config()

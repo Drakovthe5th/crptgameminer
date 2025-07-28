@@ -1,11 +1,13 @@
 from flask import request, jsonify, render_template
-from src.database.firebase import get_user_balance, get_user_data, update_balance, db
+from src.database.firebase import get_user_balance, get_user_data, update_balance, db, update_user, process_withdrawal, update_leaderboard_points, SERVER_TIMESTAMP
 from src.features.quests import get_active_quests, complete_quest
 from src.utils.security import validate_telegram_hash
 from src.utils.conversions import to_xno, usd_to_xno
-from config import Config
+from src.main import application
+from config import config
 import logging
 import datetime
+from telegram import Update
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +20,18 @@ def configure_routes(app):
     def miniapp_route():
         return render_template('miniapp.html')
     
+    # Telegram webhook endpoint
+    @app.route(f'/{config.TELEGRAM_TOKEN}', methods=['POST'])
+    def telegram_webhook():
+        """
+        Endpoint for Telegram bot webhook
+        """
+        if request.method == "POST":
+            update = Update.de_json(request.get_json(force=True), application.bot)
+            application.update_queue.put(update)
+            return jsonify(success=True), 200
+        return jsonify(success=False), 405
+
     # MiniApp API routes
     @app.route('/miniapp/balance', methods=['POST'])
     def miniapp_balance():
@@ -48,8 +62,8 @@ def configure_routes(app):
             now = datetime.datetime.now()
             last_played = user_data.get('last_played', {}).get(game_type)
             
-            if last_played and (now - last_played).seconds < Config.GAME_COOLDOWN * 60:
-                cooldown = Config.GAME_COOLDOWN * 60 - (now - last_played).seconds
+            if last_played and (now - last_played).seconds < config.GAME_COOLDOWN * 60:
+                cooldown = config.GAME_COOLDOWN * 60 - (now - last_played).seconds
                 return jsonify({
                     'success': False,
                     'error': f'Please wait {cooldown // 60} minutes before playing again'
@@ -57,7 +71,7 @@ def configure_routes(app):
             
             # Process game play and award rewards
             reward_key = f"{game_type}_reward"
-            reward = Config.REWARDS.get(reward_key, 0.01)
+            reward = config.REWARDS.get(reward_key, 0.01)
             new_balance = update_balance(user_id, reward)
             
             # Update last played time
@@ -87,10 +101,10 @@ def configure_routes(app):
             # Get user balance
             balance = get_user_balance(user_id)
             
-            if balance < Config.MIN_WITHDRAWAL:
+            if balance < config.MIN_WITHDRAWAL:
                 return jsonify({
                     'success': False,
-                    'error': f'Minimum withdrawal: {Config.MIN_WITHDRAWAL} XNO'
+                    'error': f'Minimum withdrawal: {config.MIN_WITHDRAWAL} XNO'
                 })
             
             # Process withdrawal
@@ -162,7 +176,7 @@ def configure_routes(app):
             logger.error(f"PayPal webhook error: {str(e)}")
             return jsonify({'status': 'error'}), 500
         
-    # M-Pesa callback handler (fixed indentation)
+    # M-Pesa callback handler
     @app.route('/mpesa-callback', methods=['POST'])
     def mpesa_callback():
         """
@@ -209,15 +223,3 @@ def configure_routes(app):
         except Exception as e:
             logger.error(f"Error processing M-Pesa callback: {str(e)}")
             return jsonify({"ResultCode": 1, "ResultDesc": "Server error"}), 500
-        
-    # Add this to the configure_routes function
-    @app.route(f'/{Config.TOKEN}', methods=['POST'])
-    def telegram_webhook():
-        """
-        Endpoint for Telegram bot webhook
-        """
-        if request.method == "POST":
-            # Process update
-            update = Update.de_json(request.get_json(), bot)
-            dispatcher.process_update(update)
-        return jsonify(success=True)
