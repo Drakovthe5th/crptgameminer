@@ -10,9 +10,10 @@ db = None
 users_ref = None
 transactions_ref = None
 withdrawals_ref = None
+quests_ref = None  # Added quests reference
 
 def initialize_firebase(creds_dict):
-    global db, users_ref, transactions_ref, withdrawals_ref
+    global db, users_ref, transactions_ref, withdrawals_ref, quests_ref
     
     try:
         if not firebase_admin._apps:
@@ -23,6 +24,7 @@ def initialize_firebase(creds_dict):
         users_ref = db.collection('users')
         transactions_ref = db.collection('transactions')
         withdrawals_ref = db.collection('withdrawals')
+        quests_ref = db.collection('quests')  # Initialize quests reference
         logging.info("Firebase initialized successfully")
         return True
     except Exception as e:
