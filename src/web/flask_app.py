@@ -1,9 +1,15 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask
 from src.web.routes import configure_routes
-from config import Config
+from src.telegram.bot import bot, dispatcher  # Import your bot instance
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object(Config)
+    
+    # Initialize routes
     configure_routes(app)
+    
+    # Initialize bot components
+    from src.telegram import setup_handlers
+    setup_handlers(dispatcher)
+    
     return app

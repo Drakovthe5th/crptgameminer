@@ -15,6 +15,9 @@ class Config:
     MPESA_SANDBOX = os.getenv("MPESA_SANDBOX", "True") == "True"  # Default to sandbox
     PAYPAL_CLIENT_SECRET = os.getenv("PAYPAL_CLIENT_SECRET")
     PAYPAL_MODE = os.getenv("PAYPAL_MODE", "sandbox")  # or "live"
+    ENV = os.getenv('ENV', 'production')
+    RENDER_URL = os.getenv('RENDER_EXTERNAL_URL', 'crptgameminer.onrender.com')
+    TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
     
     # Withdrawal Settings
     WITHDRAWAL_FEES = {

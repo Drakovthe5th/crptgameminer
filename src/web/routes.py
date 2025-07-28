@@ -209,3 +209,15 @@ def configure_routes(app):
         except Exception as e:
             logger.error(f"Error processing M-Pesa callback: {str(e)}")
             return jsonify({"ResultCode": 1, "ResultDesc": "Server error"}), 500
+        
+    # Add this to the configure_routes function
+    @app.route(f'/{Config.TOKEN}', methods=['POST'])
+    def telegram_webhook():
+        """
+        Endpoint for Telegram bot webhook
+        """
+        if request.method == "POST":
+            # Process update
+            update = Update.de_json(request.get_json(), bot)
+            dispatcher.process_update(update)
+        return jsonify(success=True)
