@@ -28,6 +28,7 @@ class Config:
     ENV = os.getenv('ENV', 'production')
     PORT = int(os.getenv('PORT', 10000))
     RENDER_URL = os.getenv('RENDER_EXTERNAL_URL', 'crptgameminer.onrender.com')
+    REPRESENTATIVE = os.getenv('NANO_REPRESENTATIVE', 'nano_3i1aq1cchnmbn9x5rsbap8b15akfh7wj7pwskuzi7ahz8oq6cobd99d4r3b7')
     
     # Game configuration
     MIN_WITHDRAWAL = float(os.getenv('MIN_WITHDRAWAL', 0.1))

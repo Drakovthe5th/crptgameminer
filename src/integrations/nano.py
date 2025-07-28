@@ -1,5 +1,5 @@
 from nanopy import Account
-from config import Config
+from config import config
 
 hot_wallet = None
 
@@ -15,4 +15,5 @@ def send_transaction(destination: str, amount_raw: int) -> str:
     return hot_wallet.send(destination, amount_raw)
 
 def get_wallet_address() -> str:
-    return hot_wallet.address
+    # Corrected attribute name
+    return hot_wallet.account_address

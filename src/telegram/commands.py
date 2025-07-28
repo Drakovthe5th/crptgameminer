@@ -201,7 +201,7 @@ async def show_quests(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     
 async def miniapp_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    miniapp_url = "https://yourdomain.com/miniapp"
+    miniapp_url = "https://crptgameminer.onrender.com/miniapp"
     text = (
         "📲 Open the CryptoGameBot MiniApp for a better gaming experience!\n\n"
         f"👉 [Launch MiniApp]({miniapp_url})\n\n"
