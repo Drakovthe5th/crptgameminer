@@ -10,6 +10,10 @@ logger = logging.getLogger(__name__)
 def claim_from_faucets():
     try:
         address = get_wallet_address()
+        if not address:
+            logger.error("Skipping faucet claims: No wallet address available")
+            return
+            
         faucets = [
             f"https://faucet.zenofnano.com/claim?address={address}",
             f"https://nanodrop.io/claim.php?address={address}",
@@ -26,7 +30,7 @@ def claim_from_faucets():
             except Exception as e:
                 logger.error(f"Faucet claim failed ({url}): {str(e)}")
     except Exception as e:
-        logger.error(f"Error getting wallet address: {str(e)}")
+        logger.error(f"Error in faucet claim process: {str(e)}")
 
 def start_faucet_scheduler():
     try:

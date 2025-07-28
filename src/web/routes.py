@@ -21,7 +21,7 @@ def configure_routes(app):
         return render_template('miniapp.html')
     
     # Telegram webhook endpoint
-    @app.route(f'/{config.TELEGRAM_TOKEN}', methods=['POST'])
+    @app.route('/webhook', methods=['POST'])
     def telegram_webhook():
         """
         Endpoint for Telegram bot webhook
@@ -29,8 +29,7 @@ def configure_routes(app):
         if request.method == "POST":
             update = Update.de_json(request.get_json(force=True), application.bot)
             application.update_queue.put(update)
-            return jsonify(success=True), 200
-        return jsonify(success=False), 405
+        return jsonify(success=True), 200
 
     # MiniApp API routes
     @app.route('/miniapp/balance', methods=['POST'])

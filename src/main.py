@@ -7,6 +7,9 @@ from src.integrations.nano import initialize_nano_wallet
 from src.features.faucets import start_faucet_scheduler
 from src.telegram.setup import setup_handlers
 from config import config
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Global application reference
 application = None
@@ -32,11 +35,13 @@ def run_bot():
     else:
         # Polling mode for development
         application.run_polling()
-        print("Bot started in polling mode")
+        logger.info("Bot started in polling mode")
 
 async def set_webhook():
     """Async function to set webhook properly"""
-    await application.bot.set_webhook(
-        url=f"https://{config.RENDER_URL}/{config.TELEGRAM_TOKEN}"
-    )
-    print(f"Webhook set: https://{config.RENDER_URL}/{config.TELEGRAM_TOKEN}")
+    try:
+        webhook_url = f"https://{config.RENDER_URL}/webhook"
+        await application.bot.set_webhook(webhook_url)
+        logger.info(f"Webhook set successfully: {webhook_url}")
+    except Exception as e:
+        logger.error(f"Error setting webhook: {e}")
