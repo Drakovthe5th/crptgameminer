@@ -12,6 +12,7 @@ class Config:
     
     # M-Pesa configuration
     MPESA_CONSUMER_KEY = os.getenv('MPESA_CONSUMER_KEY')
+    MPESA_SANDBOX = os.getenv('MPESA_SANDBOX', 'true').lower() == 'true'
     MPESA_CONSUMER_SECRET = os.getenv('MPESA_CONSUMER_SECRET')
     MPESA_SHORTCODE = os.getenv('MPESA_SHORTCODE', '174379')
     MPESA_LNM_SHORTCODE = os.getenv('MPESA_LNM_SHORTCODE', '174379')

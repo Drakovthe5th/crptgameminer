@@ -28,13 +28,14 @@ def process_withdrawal(user_id: int, method: str, amount: float, details: dict):
             raw_amount = to_raw(amount)
             tx_hash = send_transaction(details['address'], raw_amount)
             result = {'status': 'success', 'tx_id': tx_hash}
-            
+        
         elif method == 'mpesa':
             response = process_mpesa_withdrawal(details['phone'], amount)
             if response.get('ResponseCode') == '0':
-                result = {'status': 'success', 'tx_id': response['CheckoutRequestID']}
+                result = {'status': 'success', 'tx_id': response.get('CheckoutRequestID', '')}
             else:
-                result = {'status': 'failed', 'error': response.get('errorMessage')}
+                error_msg = response.get('errorMessage', '') or response.get('error', 'Unknown M-Pesa error')
+                result = {'status': 'failed', 'error': error_msg}
                 
         elif method == 'paypal':
             # Convert XNO to USD
