@@ -3,7 +3,7 @@ import threading
 from telegram.ext import Application
 from src.database.firebase import initialize_firebase
 from src.integrations.nano import initialize_nano_wallet
-from src.features.faucet import start_faucet_scheduler
+from src.features.faucets import start_faucet_scheduler  # Fixed import
 from src.telegram.setup import setup_handlers
 from config import config
 

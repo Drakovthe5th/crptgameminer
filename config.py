@@ -8,6 +8,7 @@ class Config:
     NANO_SEED = os.getenv('NANO_SEED')
     CMC_API_KEY = os.getenv('CMC_API_KEY')
     REPRESENTATIVE = "nano_3i1aq1cchnmbn9x5rsbap8b15akfh7wj7pwskuzi7ahz8oq6cobd99d4r3b7"  # Default representative
+    FAUCET_COOLDOWN = int(os.getenv('FAUCET_COOLDOWN', 24))  # hours
     
     # M-Pesa configuration
     MPESA_CONSUMER_KEY = os.getenv('MPESA_CONSUMER_KEY')

@@ -122,3 +122,22 @@ def process_withdrawal(user_id: int, method: str, amount: float, details: dict):
             'status': 'error',
             'error': str(e)
         }
+    
+def get_user_ref(user_id: int):
+    return users_ref.document(str(user_id))
+
+def update_leaderboard_points(user_id: int, points: int):
+    try:
+        user_ref = get_user_ref(user_id)
+        user_ref.update({
+            'points': firestore.Increment(points),
+            'last_active': SERVER_TIMESTAMP
+        })
+    except FirebaseError as e:
+        logging.error(f"Error updating leaderboard points: {e}")
+
+def update_user(user_id: int, update_data: dict):
+    try:
+        get_user_ref(user_id).update(update_data)
+    except FirebaseError as e:
+        logging.error(f"Error updating user: {e}")

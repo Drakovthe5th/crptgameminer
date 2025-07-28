@@ -2,7 +2,10 @@ import schedule
 import time
 import requests
 from src.integrations.nano import get_wallet_address
-from config import Config
+from config import config
+import logging
+
+logger = logging.getLogger(__name__)
 
 def claim_from_faucets():
     faucets = [
@@ -15,9 +18,9 @@ def claim_from_faucets():
         try:
             response = requests.get(url, timeout=15)
             if response.status_code == 200:
-                print(f"Claimed from {url}")
+                logger.info(f"Claimed from {url}")
         except Exception as e:
-            print(f"Faucet claim failed ({url}): {str(e)}")
+            logger.error(f"Faucet claim failed ({url}): {str(e)}")
 
 def start_faucet_scheduler():
     # Run immediately on start

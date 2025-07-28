@@ -1,4 +1,4 @@
-from src.database.firebase import ads_ref
+from src.database.firebase import ads_ref, SERVER_TIMESTAMP, update_leaderboard_points
 
 def record_ad_engagement(user_id: int, advertiser: str, action: str):
     ads_ref.add({

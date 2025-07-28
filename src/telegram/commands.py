@@ -213,3 +213,30 @@ async def miniapp_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode='Markdown',
         disable_web_page_preview=True
     )
+
+async def faucet(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_id = update.effective_user.id
+    user_data = get_user_data(user_id)
+    now = datetime.datetime.now()
+    
+    # Check cooldown
+    last_claim = user_data.get('faucet_claimed')
+    if last_claim and (now - last_claim).total_seconds() < config.FAUCET_COOLDOWN * 3600:
+        next_claim = last_claim + datetime.timedelta(hours=config.FAUCET_COOLDOWN)
+        wait_time = (next_claim - now).seconds // 60
+        await update.message.reply_text(
+            f"⏳ You can claim again in {wait_time} minutes"
+        )
+        return
+    
+    # Award faucet
+    reward = config.REWARDS['faucet']
+    new_balance = update_balance(user_id, reward)
+    
+    # Update last claim time
+    update_user(user_id, {'faucet_claimed': now})
+    
+    await update.message.reply_text(
+        f"💧 You claimed {reward:.6f} XNO!\n"
+        f"💰 New balance: {to_xno(new_balance):.6f} XNO"
+    )
