@@ -162,7 +162,8 @@ def configure_routes(app):
             logger.error(f"PayPal webhook error: {str(e)}")
             return jsonify({'status': 'error'}), 500
         
-        @app.route('/mpesa-callback', methods=['POST'])
+    # M-Pesa callback handler (fixed indentation)
+    @app.route('/mpesa-callback', methods=['POST'])
     def mpesa_callback():
         """
         Handle M-Pesa payment callback
