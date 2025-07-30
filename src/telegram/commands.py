@@ -240,3 +240,31 @@ async def faucet(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         f"💧 You claimed {reward:.6f} XNO!\n"
         f"💰 New balance: {to_xno(new_balance):.6f} XNO"
     )
+
+# Add new command
+async def weekend_promotion(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    today = datetime.datetime.now()
+    is_weekend = today.weekday() in [5, 6]  # Saturday or Sunday
+    
+    if is_weekend:
+        text = (
+            "🎉 WEEKEND SPECIAL 🎉\n\n"
+            "All ad rewards are boosted by 50% this weekend!\n\n"
+            "🔥 Earn more crypto with every ad you watch\n"
+            "🚀 Available in the MiniApp now!"
+        )
+    else:
+        text = (
+            "🔥 Next Weekend Promotion 🔥\n\n"
+            "Starting Saturday, all ad rewards will be boosted by 50%!\n"
+            "Set a reminder to maximize your earnings."
+        )
+    
+    keyboard = [
+        [InlineKeyboardButton("🚀 Open MiniApp", url=f"https://{config.RENDER_URL}/miniapp")]
+    ]
+    
+    await update.message.reply_text(
+        text,
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )

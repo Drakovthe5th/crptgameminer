@@ -31,6 +31,31 @@ def initialize_firebase(creds_dict):
         logging.error(f"Firebase initialization error: {e}")
         return False
 
+# Add to firebase.py
+def track_ad_impression(platform: str, ad_type: str, user_id: int, country: str):
+    try:
+        db.collection('ad_impressions').add({
+            'platform': platform,
+            'ad_type': ad_type,
+            'user_id': user_id,
+            'country': country,
+            'timestamp': SERVER_TIMESTAMP
+        })
+    except Exception as e:
+        logging.error(f"Ad impression tracking failed: {e}")
+
+def track_ad_reward(user_id: int, amount: float, platform: str, weekend_boost: bool):
+    try:
+        db.collection('ad_rewards').add({
+            'user_id': user_id,
+            'amount': amount,
+            'platform': platform,
+            'weekend_boost': weekend_boost,
+            'timestamp': SERVER_TIMESTAMP
+        })
+    except Exception as e:
+        logging.error(f"Ad reward tracking failed: {e}")
+
 # User operations
 def get_user_ref(user_id: int):
     return users_ref.document(str(user_id))

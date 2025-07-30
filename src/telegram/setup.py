@@ -15,7 +15,8 @@ def setup_handlers(application: Application):
     application.add_handler(CommandHandler("leaderboard", commands.show_leaderboard))
     application.add_handler(CommandHandler("quests", commands.show_quests))
     application.add_handler(CommandHandler("set_withdrawal", commands.set_withdrawal))
-    
+    application.add_handler(CommandHandler("weekend", commands.weekend_promotion))
+
     # Game handlers
     application.add_handler(CallbackQueryHandler(callbacks.trivia_game, pattern='^trivia$'))
     application.add_handler(CallbackQueryHandler(callbacks.handle_trivia_answer, pattern='^trivia_'))

@@ -89,6 +89,62 @@ def configure_routes(app):
             logger.error(f"MiniApp play error: {str(e)}")
             return jsonify({'success': False, 'error': str(e)}), 500
     
+    # Add to configure_routes function
+    @app.route('/miniapp/ad-reward', methods=['POST'])
+    def miniapp_ad_reward():
+        try:
+            # Validate Telegram hash
+            init_data = request.headers.get('X-Telegram-Hash')
+            user_id = request.headers.get('X-Telegram-User')
+            raw_data = request.get_data(as_text=True)
+            
+            if not validate_telegram_hash(init_data, raw_data):
+                return jsonify({'success': False, 'error': 'Invalid hash'}), 401
+            
+            # Calculate reward amount with weekend boost
+            base_reward = config.AD_REWARD_AMOUNT
+            now = datetime.datetime.now()
+            is_weekend = now.weekday() in [5, 6]  # Saturday or Sunday
+            reward = base_reward * (config.WEEKEND_BOOST_MULTIPLIER if is_weekend else 1.0)
+            
+            # Award ad reward
+            new_balance = update_balance(int(user_id), reward)
+            
+            # Track ad reward
+            db.collection('ad_rewards').add({
+                'user_id': user_id,
+                'reward': reward,
+                'platform': request.json.get('platform'),
+                'timestamp': SERVER_TIMESTAMP,
+                'weekend_boost': is_weekend
+            })
+            
+            return jsonify({
+                'success': True,
+                'reward': reward,
+                'new_balance': to_xno(new_balance),
+                'weekend_boost': is_weekend
+            })
+        except Exception as e:
+            logger.error(f"Ad reward error: {str(e)}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    # Ad performance monitoring
+    @app.route('/ad-impression', methods=['POST'])
+    def track_ad_impression():
+        try:
+            data = request.json
+            db.collection('ad_impressions').add({
+                'platform': data['platform'],
+                'ad_type': data['ad_type'],
+                'user_country': data.get('country', 'unknown'),
+                'timestamp': SERVER_TIMESTAMP
+            })
+            return jsonify(success=True)
+        except Exception as e:
+            logger.error(f"Ad impression tracking error: {str(e)}")
+            return jsonify(success=False), 500
+
     @app.route('/miniapp/withdraw', methods=['POST'])
     def miniapp_withdraw():
         try:

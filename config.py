@@ -3,6 +3,22 @@ import json
 import logging
 
 class Config:
+        # Ad configuration
+    AD_ENABLED = os.getenv('AD_ENABLED', 'true').lower() == 'true'
+    AD_REWARD_AMOUNT = float(os.getenv('AD_REWARD_AMOUNT', 0.01))
+    WEEKEND_BOOST_MULTIPLIER = float(os.getenv('WEEKEND_BOOST', 1.5))
+    
+    # Platform IDs
+    COINZILLA_PUB_ID = os.getenv('COINZILLA_PUB_ID')
+    PROPELLER_ZONE_ID = os.getenv('PROPELLER_ZONE_ID')
+    A_ADS_ZONE_ID = os.getenv('A_ADS_ZONE_ID')
+    
+    # Geo-targeting preferences
+    HIGH_CPM_COUNTRIES = ['US', 'CA', 'UK', 'AU', 'DE', 'FR', 'JP', 'SG']
+    
+    # Ad refresh settings
+    AD_REFRESH_INTERVAL = int(os.getenv('AD_REFRESH_MIN', 60))  # Minutes
+
     # Load environment variables
     TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
     NANO_SEED = os.getenv('NANO_SEED')
