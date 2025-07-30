@@ -30,6 +30,12 @@ def configure_routes(app):
             update = Update.de_json(request.get_json(force=True), application.bot)
             application.update_queue.put(update)
         return jsonify(success=True), 200
+    
+    @app.route('/webhook', methods=['POST'])
+    def telegram_webhook():
+    # Verify secret token
+    if request.headers.get('X-Telegram-Bot-Api-Secret-Token') != config.TELEGRAM_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
 
     # MiniApp API routes
     @app.route('/miniapp/balance', methods=['POST'])

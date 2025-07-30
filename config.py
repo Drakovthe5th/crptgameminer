@@ -43,7 +43,7 @@ class Config:
     # Application settings
     ENV = os.getenv('ENV', 'production')
     PORT = int(os.getenv('PORT', 10000))
-    RENDER_URL = os.getenv('RENDER_EXTERNAL_URL', 'crptgameminer.onrender.com')
+    RENDER_EXTERNAL_URL = os.getenv('RENDER_EXTERNAL_URL', 'crptgameminer.onrender.com')
     REPRESENTATIVE = os.getenv('NANO_REPRESENTATIVE', 'nano_3ur1a7tsboowmxokmhfppfpcctoiuuwhhgyhzf6oux8edzhp61nqkoyzb3os')
     WEBHOOK_PATH = "/webhook"
     
