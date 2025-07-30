@@ -40,9 +40,10 @@ def run_bot():
 async def set_webhook():
     """Async function to set webhook properly"""
     try:
-        # Use RENDER_EXTERNAL_URL instead of RENDER_URL
+        # Use HTTPS and correct Render URL format
         webhook_url = f"https://{config.RENDER_EXTERNAL_URL}/webhook"
         
+        # Add token to URL path for security
         await application.bot.set_webhook(
             webhook_url,
             secret_token=config.TELEGRAM_TOKEN,
