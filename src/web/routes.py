@@ -21,7 +21,7 @@ def configure_routes(app):
         return render_template('miniapp.html')
     
     # Telegram webhook endpoint
-    @app.route('/webhook', methods=['POST'])
+    @app.route(f'/{config.TELEGRAM_TOKEN}/webhook', methods=['POST'])
     def telegram_webhook():
         """
         Endpoint for Telegram bot webhook

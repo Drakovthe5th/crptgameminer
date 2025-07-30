@@ -16,13 +16,11 @@ def initialize_nano_wallet(seed: str, representative: str):
 
 def get_wallet_address() -> str:
     try:
-        # Try both common attribute names
-        if hasattr(hot_wallet, 'account_address'):
+        if hot_wallet:
+            # Use account_address instead of address
             return hot_wallet.account_address
-        elif hasattr(hot_wallet, 'address'):
-            return hot_wallet.address
         else:
-            logger.error("Nano wallet object has no address attribute")
+            logger.error("Nano wallet not initialized")
             return ""
     except Exception as e:
         logger.error(f"Error getting wallet address: {e}")

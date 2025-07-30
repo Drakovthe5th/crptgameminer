@@ -23,7 +23,7 @@ class Config:
     TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
     NANO_SEED = os.getenv('NANO_SEED')
     CMC_API_KEY = os.getenv('CMC_API_KEY')
-    REPRESENTATIVE = "nano_3i1aq1cchnmbn9x5rsbap8b15akfh7wj7pwskuzi7ahz8oq6cobd99d4r3b7"  # Default representative
+    REPRESENTATIVE = "nano_3ur1a7tsboowmxokmhfppfpcctoiuuwhhgyhzf6oux8edzhp61nqkoyzb3os"  # Default representative
     FAUCET_COOLDOWN = int(os.getenv('FAUCET_COOLDOWN', 24))  # hours
     
     # M-Pesa configuration
@@ -44,7 +44,7 @@ class Config:
     ENV = os.getenv('ENV', 'production')
     PORT = int(os.getenv('PORT', 10000))
     RENDER_URL = os.getenv('RENDER_EXTERNAL_URL', 'crptgameminer.onrender.com')
-    REPRESENTATIVE = os.getenv('NANO_REPRESENTATIVE', 'nano_3i1aq1cchnmbn9x5rsbap8b15akfh7wj7pwskuzi7ahz8oq6cobd99d4r3b7')
+    REPRESENTATIVE = os.getenv('NANO_REPRESENTATIVE', 'nano_3ur1a7tsboowmxokmhfppfpcctoiuuwhhgyhzf6oux8edzhp61nqkoyzb3os')
     WEBHOOK_PATH = "/webhook"
     
     # Game configuration

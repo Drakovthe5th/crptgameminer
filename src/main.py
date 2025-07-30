@@ -40,8 +40,15 @@ def run_bot():
 async def set_webhook():
     """Async function to set webhook properly"""
     try:
-        webhook_url = f"https://{config.RENDER_URL}/webhook"
-        await application.bot.set_webhook(webhook_url)
+        # Use HTTPS and correct Render URL format
+        webhook_url = f"https://{config.RENDER_EXTERNAL_URL}/webhook"
+        
+        # Add token to URL path for security
+        await application.bot.set_webhook(
+            webhook_url,
+            secret_token=config.TELEGRAM_TOKEN,
+            drop_pending_updates=True
+        )
         logger.info(f"Webhook set successfully: {webhook_url}")
     except Exception as e:
         logger.error(f"Error setting webhook: {e}")
