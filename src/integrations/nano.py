@@ -1,5 +1,5 @@
 import logging
-from nanopy import Account
+from nanopy import Key, Account  # Make sure to import Key
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -8,16 +8,18 @@ hot_wallet = None
 def initialize_nano_wallet(seed: str, representative: str):
     global hot_wallet
     try:
-        hot_wallet = Account(seed, 0)
+        # Create key from seed first
+        key = Key(seed=seed, index=0)
+        hot_wallet = Account(key)
         hot_wallet.representative = representative
         logger.info(f"Nano wallet initialized with representative: {representative}")
+        logger.info(f"Wallet address: {hot_wallet.account_address}")
     except Exception as e:
         logger.error(f"Error initializing Nano wallet: {e}")
 
 def get_wallet_address() -> str:
     try:
         if hot_wallet:
-            # Use account_address instead of address
             return hot_wallet.account_address
         else:
             logger.error("Nano wallet not initialized")
