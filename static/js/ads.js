@@ -3,6 +3,7 @@ class AdManager {
         this.userId = userId;
         this.country = country;
         this.adBlockDetected = false;
+        this.adScriptsLoaded = {};
         this.checkAdBlock();
     }
     
@@ -35,7 +36,8 @@ class AdManager {
     // Geo-targeted ad selection
     selectAdPlatform() {
         // High CPM countries get premium ads
-        if (config.HIGH_CPM_COUNTRIES.includes(this.country)) {
+        const highCPMCountries = ['US', 'CA', 'UK', 'AU', 'DE', 'FR'];
+        if (highCPMCountries.includes(this.country)) {
             return 'coinzilla';
         }
         
@@ -54,112 +56,151 @@ class AdManager {
         if (this.adBlockDetected) return;
         
         const platform = this.selectAdPlatform();
-        let adScript = '';
+        const adContainer = document.getElementById('ad-container');
+        
+        // Clear previous ad
+        adContainer.innerHTML = '';
         
         switch(platform) {
             case 'coinzilla':
-                adScript = `
-                    <div id="coinzilla-ad" data-zone="${config.COINZILLA_PUB_ID}"></div>
-                    <script>
-                        (function() {
-                            const czScript = document.createElement('script');
-                            czScript.async = true;
-                            czScript.src = 'https://coinzilla.com/scripts/banner.js';
-                            document.head.appendChild(czScript);
-                        })();
-                    </script>
-                `;
+                this.loadCoinzillaAd();
                 break;
                 
             case 'propeller':
-                adScript = `
-                    <div id="propeller-ad"></div>
-                    <script>
-                        (function() {
-                            const ppScript = document.createElement('script');
-                            ppScript.src = 'https://ads.propellerads.com/v5/${config.PROPELLER_ZONE_ID}';
-                            document.head.appendChild(ppScript);
-                        })();
-                    </script>
-                `;
+                this.loadPropellerAd();
                 break;
                 
             case 'a-ads':
-                adScript = `
-                    <div id="a-ads-ad"></div>
-                    <script>
-                        (function() {
-                            const aaScript = document.createElement('script');
-                            aaScript.src = 'https://a-ads.com/${config.A_ADS_ZONE_ID}';
-                            document.head.appendChild(aaScript);
-                        })();
-                    </script>
-                `;
+                this.loadAAdsAd();
                 break;
         }
         
-        document.getElementById('ad-container').innerHTML = adScript;
         this.trackImpression(platform, 'banner');
+    }
+    
+    loadCoinzillaAd() {
+        if (!this.adScriptsLoaded.coinzilla) {
+            const script = document.createElement('script');
+            script.src = 'https://coinzilla.com/scripts/banner.js';
+            script.async = true;
+            document.head.appendChild(script);
+            this.adScriptsLoaded.coinzilla = true;
+        }
+        
+        const adContainer = document.getElementById('ad-container');
+        adContainer.innerHTML = `
+            <div id="coinzilla-ad" data-zone="${config.COINZILLA_ZONE_ID}"></div>
+        `;
+    }
+    
+    loadPropellerAd() {
+        if (!this.adScriptsLoaded.propeller) {
+            const script = document.createElement('script');
+            script.src = `https://ads.propellerads.com/v5/${config.PROPELLER_ZONE_ID}`;
+            script.async = true;
+            document.head.appendChild(script);
+            this.adScriptsLoaded.propeller = true;
+        }
+        
+        const adContainer = document.getElementById('ad-container');
+        adContainer.innerHTML = `
+            <div id="propeller-ad"></div>
+        `;
+    }
+    
+    loadAAdsAd() {
+        if (!this.adScriptsLoaded.aads) {
+            const script = document.createElement('script');
+            script.src = `https://a-ads.com/${config.A_ADS_ZONE_ID}`;
+            script.async = true;
+            document.head.appendChild(script);
+            this.adScriptsLoaded.aads = true;
+        }
+        
+        const adContainer = document.getElementById('ad-container');
+        adContainer.innerHTML = `
+            <div id="a-ads-ad"></div>
+        `;
     }
     
     // Rewarded ad flow
     showRewardedAd() {
         const platform = this.selectAdPlatform();
-        let rewardHandler;
+        
+        // Show loading indicator
+        const boostButton = document.getElementById('boost-earnings');
+        const originalText = boostButton.innerHTML;
+        boostButton.innerHTML = 'Loading ad...';
+        boostButton.disabled = true;
         
         switch(platform) {
             case 'coinzilla':
-                rewardHandler = this.showCoinzillaRewarded();
-                break;
+                return this.showCoinzillaRewarded(originalText);
                 
             case 'propeller':
-                rewardHandler = this.showPropellerRewarded();
-                break;
+                return this.showPropellerRewarded(originalText);
                 
             case 'a-ads':
-                rewardHandler = this.showAAdsRewarded();
-                break;
+                return this.showAAdsRewarded(originalText);
         }
-        
-        rewardHandler.catch(error => {
-            console.error('Rewarded ad failed:', error);
-            Telegram.WebApp.showAlert('Ad failed to load. Please try again.');
+    }
+    
+    showCoinzillaRewarded(originalText) {
+        return new Promise((resolve, reject) => {
+            // Simulated rewarded ad flow
+            Telegram.WebApp.showAlert('Watch a short video to earn rewards!');
+            
+            // Simulate ad loading time
+            setTimeout(() => {
+                // Simulate ad completion
+                setTimeout(() => {
+                    this.grantReward('coinzilla');
+                    resolve();
+                    
+                    // Reset button
+                    const boostButton = document.getElementById('boost-earnings');
+                    boostButton.innerHTML = originalText;
+                    boostButton.disabled = false;
+                }, 3000);
+            }, 1500);
         });
     }
     
-    showCoinzillaRewarded() {
+    showPropellerRewarded(originalText) {
         return new Promise((resolve, reject) => {
-            // Coinzilla rewarded implementation
-            Telegram.WebApp.showAlert('Watch a short video to earn rewards!');
-            // Simulate ad completion
+            // Simulated rewarded ad flow
+            Telegram.WebApp.showAlert('Complete the ad to earn rewards!');
+            
             setTimeout(() => {
-                this.grantReward('coinzilla');
-                resolve();
-            }, 3000);
+                setTimeout(() => {
+                    this.grantReward('propeller');
+                    resolve();
+                    
+                    // Reset button
+                    const boostButton = document.getElementById('boost-earnings');
+                    boostButton.innerHTML = originalText;
+                    boostButton.disabled = false;
+                }, 3000);
+            }, 1500);
         });
     }
     
-    showPropellerRewarded() {
+    showAAdsRewarded(originalText) {
         return new Promise((resolve, reject) => {
-            // PropellerAds implementation
-            Telegram.WebApp.showAlert('Watch a short video to earn rewards!');
-            // Simulate ad completion
+            // Simulated rewarded ad flow
+            Telegram.WebApp.showAlert('Watch the full ad to earn crypto!');
+            
             setTimeout(() => {
-                this.grantReward('propeller');
-                resolve();
-            }, 3000);
-        });
-    }
-    
-    showAAdsRewarded() {
-        return new Promise((resolve, reject) => {
-            // A-ADS implementation
-            Telegram.WebApp.showAlert('Watch a short video to earn rewards!');
-            // Simulate ad completion
-            setTimeout(() => {
-                this.grantReward('a-ads');
-                resolve();
-            }, 3000);
+                setTimeout(() => {
+                    this.grantReward('a-ads');
+                    resolve();
+                    
+                    // Reset button
+                    const boostButton = document.getElementById('boost-earnings');
+                    boostButton.innerHTML = originalText;
+                    boostButton.disabled = false;
+                }, 3000);
+            }, 1500);
         });
     }
     
@@ -170,7 +211,10 @@ class AdManager {
                 'Content-Type': 'application/json',
                 'X-Telegram-User': this.userId
             },
-            body: JSON.stringify({ platform: platform })
+            body: JSON.stringify({ 
+                platform: platform,
+                country: this.country
+            })
         })
         .then(response => response.json())
         .then(data => {
@@ -178,6 +222,13 @@ class AdManager {
                 const message = `You earned ${data.reward.toFixed(6)} XNO! ${data.weekend_boost ? '(Weekend Boost Active!)' : ''}`;
                 Telegram.WebApp.showAlert(message);
                 Telegram.WebApp.HapticFeedback.impactOccurred('heavy');
+                
+                // Update balance display
+                const balanceDisplay = document.querySelector('.balance-amount');
+                if (balanceDisplay) {
+                    const currentBalance = parseFloat(balanceDisplay.textContent);
+                    balanceDisplay.textContent = (currentBalance + data.reward).toFixed(6) + ' XNO';
+                }
             }
         });
     }
@@ -196,7 +247,8 @@ class AdManager {
             body: JSON.stringify({
                 platform: platform,
                 ad_type: adType,
-                country: this.country
+                country: this.country,
+                user_id: this.userId
             })
         });
     }
