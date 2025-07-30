@@ -20,24 +20,17 @@ def configure_routes(app):
     def miniapp_route():
         return render_template('miniapp.html')
     
-    # Telegram webhook endpoint
+    # Telegram webhook endpoint - FIXED: Removed duplicate definition
     @app.route('/webhook', methods=['POST'], endpoint='telegram_webhook')
     def telegram_webhook():
+        # Verify secret token
         if request.headers.get('X-Telegram-Bot-Api-Secret-Token') != config.TELEGRAM_TOKEN:
             return jsonify({"error": "Unauthorized"}), 401
-        """
-        Endpoint for Telegram bot webhook
-        """
+            
         if request.method == "POST":
             update = Update.de_json(request.get_json(force=True), application.bot)
             application.update_queue.put(update)
         return jsonify(success=True), 200
-    
-    @app.route('/webhook', methods=['POST'])
-    def telegram_webhook():
-    # Verify secret token
-        if request.headers.get('X-Telegram-Bot-Api-Secret-Token') != config.TELEGRAM_TOKEN:
-            return jsonify({"error": "Unauthorized"}), 401
 
     # MiniApp API routes
     @app.route('/miniapp/balance', methods=['POST'], endpoint='miniapp_balance')
@@ -194,6 +187,7 @@ def configure_routes(app):
     def paypal_webhook():
         try:
             # Verify webhook signature
+            # NOTE: You need to implement verify_paypal_webhook or import it
             if not verify_paypal_webhook(request.headers, request.data):
                 return jsonify({'status': 'invalid signature'}), 401
                 
