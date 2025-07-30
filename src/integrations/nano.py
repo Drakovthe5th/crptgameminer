@@ -27,3 +27,16 @@ def get_wallet_address() -> str:
     except Exception as e:
         logger.error(f"Error getting wallet address: {e}")
         return ""
+    
+def send_transaction(destination: str, amount: int) -> str:
+    global hot_wallet
+    if not hot_wallet:
+        raise RuntimeError("Nano wallet not initialized")
+    
+    try:
+        # Create and process send block
+        send_block = hot_wallet.send(destination, amount)
+        return send_block.hash
+    except Exception as e:
+        logger.error(f"Error sending transaction: {e}")
+        raise
