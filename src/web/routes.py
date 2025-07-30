@@ -16,13 +16,15 @@ def configure_routes(app):
     def index():
         return "CryptoGameBot is running!"
     
-    @app.route('/miniapp')
+    @app.route('/miniapp', endpoint='miniapp')
     def miniapp_route():
         return render_template('miniapp.html')
     
     # Telegram webhook endpoint
-    @app.route(f'/{config.TELEGRAM_TOKEN}/webhook', methods=['POST'])
+    @app.route('/webhook', methods=['POST'], endpoint='telegram_webhook')
     def telegram_webhook():
+        if request.headers.get('X-Telegram-Bot-Api-Secret-Token') != config.TELEGRAM_TOKEN:
+            return jsonify({"error": "Unauthorized"}), 401
         """
         Endpoint for Telegram bot webhook
         """
@@ -38,7 +40,7 @@ def configure_routes(app):
             return jsonify({"error": "Unauthorized"}), 401
 
     # MiniApp API routes
-    @app.route('/miniapp/balance', methods=['POST'])
+    @app.route('/miniapp/balance', methods=['POST'], endpoint='miniapp_balance')
     def miniapp_balance():
         try:
             # Validate Telegram hash
@@ -55,7 +57,7 @@ def configure_routes(app):
             logger.error(f"MiniApp balance error: {str(e)}")
             return jsonify({'success': False, 'error': str(e)}), 500
     
-    @app.route('/miniapp/play', methods=['POST'])
+    @app.route('/miniapp/play', methods=['POST'], endpoint='miniapp_play_game')
     def miniapp_play_game():
         try:
             data = request.get_json()
@@ -96,7 +98,7 @@ def configure_routes(app):
             return jsonify({'success': False, 'error': str(e)}), 500
     
     # Add to configure_routes function
-    @app.route('/miniapp/ad-reward', methods=['POST'])
+    @app.route('/miniapp/ad-reward', methods=['POST'], endpoint='miniapp_ad_reward')
     def miniapp_ad_reward():
         try:
             # Validate Telegram hash
@@ -136,7 +138,7 @@ def configure_routes(app):
             return jsonify({'success': False, 'error': str(e)}), 500
 
     # Ad performance monitoring
-    @app.route('/ad-impression', methods=['POST'])
+    @app.route('/ad-impression', methods=['POST'], endpoint='track_ad_impression')
     def track_ad_impression():
         try:
             data = request.json
@@ -151,7 +153,7 @@ def configure_routes(app):
             logger.error(f"Ad impression tracking error: {str(e)}")
             return jsonify(success=False), 500
 
-    @app.route('/miniapp/withdraw', methods=['POST'])
+    @app.route('/miniapp/withdraw', methods=['POST'], endpoint='miniapp_withdraw')
     def miniapp_withdraw():
         try:
             data = request.get_json()
@@ -188,7 +190,7 @@ def configure_routes(app):
             return jsonify({'success': False, 'error': str(e)}), 500
     
     # PayPal webhook handler
-    @app.route('/paypal/webhook', methods=['POST'])
+    @app.route('/paypal/webhook', methods=['POST'], endpoint='paypal_webhook')
     def paypal_webhook():
         try:
             # Verify webhook signature
@@ -238,7 +240,7 @@ def configure_routes(app):
             return jsonify({'status': 'error'}), 500
         
     # M-Pesa callback handler
-    @app.route('/mpesa-callback', methods=['POST'])
+    @app.route('/mpesa-callback', methods=['POST'], endpoint='mpesa_callback')
     def mpesa_callback():
         """
         Handle M-Pesa payment callback
