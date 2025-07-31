@@ -1,0 +1,11 @@
+checks:
+  security: true
+  performance: true
+  documentation: true
+  test_coverage: true
+  complexity: true
+
+ignore:
+  - "**/migrations/**"
+  - "**/node_modules/**"
+  - "**/vendor/**"
