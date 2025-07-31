@@ -78,10 +78,6 @@ app = create_app()
 #if __name__ == "__main__":
  #   app.run(host='0.0.0.0', port=int(os.getenv("PORT", 8080)), debug=app.config['ENVIRONMENT'] == 'development')
 
-if __name__ == '__main__':
-    try:
-        app.run(host='0.0.0.0', port=int(os.getenv("PORT", 8080)))
-    except Exception as e:
-        import traceback
-        print(f"Application failed to start: {str(e)}")
-        traceback.print_exc()
+if __name__ == "__main__":
+    app = create_app()
+    app.run(host='0.0.0.0', port=int(os.getenv("PORT", 8080)))

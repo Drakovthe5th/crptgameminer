@@ -1,3 +1,4 @@
+# requirements.txt
 python-telegram-bot==20.3
 flask==3.0.0
 gunicorn==21.2.0
@@ -6,3 +7,4 @@ google-cloud-secret-manager==2.16.1
 requests==2.31.0
 pycryptodome==3.19.0
 python-dotenv==1.0.0
+google-api-python-client==2.177.0  # Pinned version

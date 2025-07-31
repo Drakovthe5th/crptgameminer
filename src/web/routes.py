@@ -1,5 +1,5 @@
 from flask import request, jsonify, render_template
-from src.database.firebase import get_user_balance, update_balance, get_user_data, db, SERVER_TIMESTAMP
+from database.firebase import get_user_balance, update_balance, get_user_data, db, SERVER_TIMESTAMP
 from src.utils.security import validate_telegram_hash
 from src.utils.conversions import to_xno
 import datetime
