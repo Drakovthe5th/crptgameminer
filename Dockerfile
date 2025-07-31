@@ -20,9 +20,26 @@ WORKDIR /app
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt .
 
-# Install Python dependencies with faster mirror
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir --index-url https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
+# Upgrade pip and install dependencies in stages
+RUN pip install --upgrade pip
+
+# Install core dependencies first
+RUN pip install --no-cache-dir \
+    flask==3.0.0 \
+    gunicorn==21.2.0 \
+    python-telegram-bot==20.3 \
+    firebase-admin==6.2.0 \
+    requests==2.31.0
+
+# Install large packages separately with retries
+RUN pip install --no-cache-dir --retries 5 \
+    google-api-python-client==2.177.0
+
+# Install remaining dependencies
+RUN pip install --no-cache-dir \
+    google-cloud-secret-manager==2.16.1 \
+    pycryptodome==3.19.0 \
+    python-dotenv==1.0.0
 
 # Copy application code
 COPY . .
