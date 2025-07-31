@@ -64,10 +64,24 @@ def create_app():
         response.headers['X-Frame-Options'] = 'DENY'
         return response
     
+    if not app.debug and os.getenv("WERKZEUG_RUN_MAIN") != "true":
+        from src.main import run_bot
+        bot_thread = threading.Thread(target=run_bot)
+        bot_thread.daemon = True
+        bot_thread.start()
+
     return app
 
 # Create application instance
 app = create_app()
 
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=int(os.getenv("PORT", 8080)), debug=app.config['ENVIRONMENT'] == 'development')
+#if __name__ == "__main__":
+ #   app.run(host='0.0.0.0', port=int(os.getenv("PORT", 8080)), debug=app.config['ENVIRONMENT'] == 'development')
+
+if __name__ == '__main__':
+    try:
+        app.run(host='0.0.0.0', port=int(os.getenv("PORT", 8080)))
+    except Exception as e:
+        import traceback
+        print(f"Application failed to start: {str(e)}")
+        traceback.print_exc()

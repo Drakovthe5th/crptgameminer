@@ -183,6 +183,21 @@ def configure_routes(app):
         except Exception as e:
             logger.error(f"GitHub webhook error: {str(e)}")
             return jsonify({'error': 'Internal server error'}), 500
+        
+    @app.route('/webhook', methods=['POST'])
+    def telegram_webhook():
+        from telegram import Update
+        from src.main import application  # Import after initialization
+        
+        # Verification
+        token = request.headers.get('X-Telegram-Bot-Api-Secret-Token')
+        if token != app.config['TELEGRAM_TOKEN']:
+            return 'Unauthorized', 401
+        
+        # Process update
+        update = Update.de_json(request.get_json(), application.bot)
+        application.process_update(update)
+        return 'ok', 200
 
 # Helper functions
 def extract_user_id(init_data):

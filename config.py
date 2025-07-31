@@ -55,19 +55,6 @@ class Config:
         'trivia_reward': float(os.getenv('TRIVIA_REWARD', 0.05)),
         'puzzle_reward': float(os.getenv('PUZZLE_REWARD', 0.02))
     }
-    
-    # Firebase configuration
-    @property
-    def FIREBASE_CREDS(self):
-        creds_json = os.getenv('FIREBASE_CREDS_JSON')
-        if not creds_json:
-            logging.error("FIREBASE_CREDS_JSON environment variable not set!")
-            return {}
-        try:
-            return json.loads(creds_json)
-        except json.JSONDecodeError:
-            logging.error("Failed to parse FIREBASE_CREDS_JSON")
-            return {}
 
 # Singleton instance
 config = Config()
