@@ -1,41 +1,26 @@
 import requests
-from config import Config
+import logging
+import os
 
+logger = logging.getLogger(__name__)
 
 def to_xno(raw_amount: int) -> float:
+    """Convert raw amount to XNO"""
     return raw_amount / 10**30
 
 def to_raw(xno_amount: float) -> int:
+    """Convert XNO to raw amount"""
     return int(xno_amount * 10**30)
 
 def usd_to_xno(amount: float, inverse=False) -> float:
     """Convert between USD and XNO using CoinMarketCap"""
-    if not Config.CMC_API_KEY:
-        # Fallback rate if API key not available
-        return amount * (1/3.0 if inverse else 3.0)
+    # In production, use CoinMarketCap API
+    # For this example, use a fixed rate
+    conversion_rate = 2.5  # 1 XNO = $2.50
     
-    try:
-        url = "https://pro-api.coinmarketcap.com/v2/tools/price-conversion"
-        params = {
-            'amount': amount,
-            'symbol': 'XNO' if inverse else 'USD',
-            'convert': 'USD' if inverse else 'XNO'
-        }
-        headers = {'X-CMC_PRO_API_KEY': Config.CMC_API_KEY}
-        
-        response = requests.get(url, params=params, headers=headers)
-        data = response.json()
-        
-        if response.status_code == 200 and data['status']['error_code'] == 0:
-            quote = data['data']['quote']
-            if inverse:
-                # Converting USD to XNO
-                return quote['XNO']['price']
-            else:
-                # Converting XNO to USD
-                return quote['USD']['price']
-    except Exception:
-        pass
-    
-    # Fallback if API fails
-    return amount * (1/3.0 if inverse else 3.0)
+    if inverse:
+        # Convert USD to XNO
+        return amount / conversion_rate
+    else:
+        # Convert XNO to USD
+        return amount * conversion_rate

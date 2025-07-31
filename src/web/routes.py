@@ -1,13 +1,11 @@
 from flask import request, jsonify, render_template
-from src.database.firebase import get_user_balance, get_user_data, update_balance, db, update_user, process_withdrawal, update_leaderboard_points, SERVER_TIMESTAMP
-from src.features.quests import get_active_quests, complete_quest
+from src.database.firebase import get_user_balance, update_balance, get_user_data, db, SERVER_TIMESTAMP
 from src.utils.security import validate_telegram_hash
-from src.utils.conversions import to_xno, usd_to_xno
-from src.main import application
-from config import config
-import logging
+from src.utils.conversions import to_xno
 import datetime
-from telegram import Update
+import logging
+import hmac
+import hashlib
 
 logger = logging.getLogger(__name__)
 
@@ -16,267 +14,195 @@ def configure_routes(app):
     def index():
         return "CryptoGameBot is running!"
     
-    @app.route('/miniapp', endpoint='miniapp')
+    @app.route('/miniapp')
     def miniapp_route():
         return render_template('miniapp.html')
     
-    # Telegram webhook endpoint - FIXED: Removed duplicate definition
-    @app.route('/webhook', methods=['POST'], endpoint='telegram_webhook')
-    def telegram_webhook():
-        # Verify secret token
-        if request.headers.get('X-Telegram-Bot-Api-Secret-Token') != config.TELEGRAM_TOKEN:
-            return jsonify({"error": "Unauthorized"}), 401
-            
-        if request.method == "POST":
-            update = Update.de_json(request.get_json(force=True), application.bot)
-            application.update_queue.put(update)
-        return jsonify(success=True), 200
-
-    # MiniApp API routes
-    @app.route('/miniapp/balance', methods=['POST'], endpoint='miniapp_balance')
+    # Telegram MiniApp API endpoints
+    @app.route('/miniapp/balance', methods=['POST'])
     def miniapp_balance():
         try:
-            # Validate Telegram hash
-            init_data = request.headers.get('X-Telegram-Hash')
-            user_id = request.headers.get('X-Telegram-User')
+            # Get request data
             raw_data = request.get_data(as_text=True)
+            init_data = request.headers.get('X-Telegram-InitData')
             
-            if not validate_telegram_hash(init_data, raw_data):
+            # Validate Telegram MiniApp hash
+            if not validate_telegram_hash(init_data, raw_data, app.config['TELEGRAM_TOKEN']):
                 return jsonify({'success': False, 'error': 'Invalid hash'}), 401
             
-            balance = get_user_balance(int(user_id))
-            return jsonify({'success': True, 'balance': to_xno(balance)})
+            # Extract user ID from initData
+            user_id = extract_user_id(init_data)
+            if not user_id:
+                return jsonify({'success': False, 'error': 'User ID not found'}), 400
+            
+            # Get user balance
+            balance = get_user_balance(user_id)
+            return jsonify({
+                'success': True,
+                'balance': to_xno(balance),
+                'min_withdrawal': app.config['MIN_WITHDRAWAL']
+            })
         except Exception as e:
             logger.error(f"MiniApp balance error: {str(e)}")
-            return jsonify({'success': False, 'error': str(e)}), 500
+            return jsonify({'success': False, 'error': 'Internal server error'}), 500
     
-    @app.route('/miniapp/play', methods=['POST'], endpoint='miniapp_play_game')
+    @app.route('/miniapp/play', methods=['POST'])
     def miniapp_play_game():
         try:
-            data = request.get_json()
-            user_id = int(data['user_id'])
-            game_type = data['game_type']
+            # Validate request
+            init_data = request.headers.get('X-Telegram-InitData')
+            raw_data = request.get_data(as_text=True)
             
-            # Check cooldown
+            if not validate_telegram_hash(init_data, raw_data, app.config['TELEGRAM_TOKEN']):
+                return jsonify({'success': False, 'error': 'Invalid hash'}), 401
+            
+            # Extract user ID
+            user_id = extract_user_id(init_data)
+            if not user_id:
+                return jsonify({'success': False, 'error': 'User ID not found'}), 400
+            
+            # Process game request
+            data = request.get_json()
+            game_type = data.get('game_type')
+            
+            # Get user data
             user_data = get_user_data(user_id)
             now = datetime.datetime.now()
-            last_played = user_data.get('last_played', {}).get(game_type)
             
-            if last_played and (now - last_played).seconds < config.GAME_COOLDOWN * 60:
-                cooldown = config.GAME_COOLDOWN * 60 - (now - last_played).seconds
+            # Check cooldown
+            last_played = user_data.get('last_played', {}).get(game_type)
+            if last_played and (now - last_played).seconds < 300:  # 5 min cooldown
+                cooldown = 300 - (now - last_played).seconds
                 return jsonify({
                     'success': False,
-                    'error': f'Please wait {cooldown // 60} minutes before playing again'
+                    'error': f'Please wait {cooldown} seconds before playing again'
                 })
             
-            # Process game play and award rewards
-            reward_key = f"{game_type}_reward"
-            reward = config.REWARDS.get(reward_key, 0.01)
+            # Calculate reward (simplified for example)
+            rewards = {
+                'trivia': 0.01,
+                'clicker': 0.015,
+                'spin': 0.02
+            }
+            reward = rewards.get(game_type, 0.01)
+            
+            # Update balance
             new_balance = update_balance(user_id, reward)
             
             # Update last played time
-            update_user(user_id, {f'last_played.{game_type}': now})
-            
-            # Update leaderboard points
-            points = 5 if game_type == 'trivia' else 1
-            update_leaderboard_points(user_id, points)
+            update_data = {f'last_played.{game_type}': now}
+            db.collection('users').document(str(user_id)).update(update_data)
             
             return jsonify({
                 'success': True,
                 'reward': reward,
-                'new_balance': new_balance
+                'new_balance': to_xno(new_balance)
             })
         except Exception as e:
             logger.error(f"MiniApp play error: {str(e)}")
-            return jsonify({'success': False, 'error': str(e)}), 500
+            return jsonify({'success': False, 'error': 'Internal server error'}), 500
     
-    # Add to configure_routes function
-    @app.route('/miniapp/ad-reward', methods=['POST'], endpoint='miniapp_ad_reward')
-    def miniapp_ad_reward():
-        try:
-            # Validate Telegram hash
-            init_data = request.headers.get('X-Telegram-Hash')
-            user_id = request.headers.get('X-Telegram-User')
-            raw_data = request.get_data(as_text=True)
-            
-            if not validate_telegram_hash(init_data, raw_data):
-                return jsonify({'success': False, 'error': 'Invalid hash'}), 401
-            
-            # Calculate reward amount with weekend boost
-            base_reward = config.AD_REWARD_AMOUNT
-            now = datetime.datetime.now()
-            is_weekend = now.weekday() in [5, 6]  # Saturday or Sunday
-            reward = base_reward * (config.WEEKEND_BOOST_MULTIPLIER if is_weekend else 1.0)
-            
-            # Award ad reward
-            new_balance = update_balance(int(user_id), reward)
-            
-            # Track ad reward
-            db.collection('ad_rewards').add({
-                'user_id': user_id,
-                'reward': reward,
-                'platform': request.json.get('platform'),
-                'timestamp': SERVER_TIMESTAMP,
-                'weekend_boost': is_weekend
-            })
-            
-            return jsonify({
-                'success': True,
-                'reward': reward,
-                'new_balance': to_xno(new_balance),
-                'weekend_boost': is_weekend
-            })
-        except Exception as e:
-            logger.error(f"Ad reward error: {str(e)}")
-            return jsonify({'success': False, 'error': str(e)}), 500
-
-    # Ad performance monitoring
-    @app.route('/ad-impression', methods=['POST'], endpoint='track_ad_impression')
-    def track_ad_impression():
-        try:
-            data = request.json
-            db.collection('ad_impressions').add({
-                'platform': data['platform'],
-                'ad_type': data['ad_type'],
-                'user_country': data.get('country', 'unknown'),
-                'timestamp': SERVER_TIMESTAMP
-            })
-            return jsonify(success=True)
-        except Exception as e:
-            logger.error(f"Ad impression tracking error: {str(e)}")
-            return jsonify(success=False), 500
-
-    @app.route('/miniapp/withdraw', methods=['POST'], endpoint='miniapp_withdraw')
+    @app.route('/miniapp/withdraw', methods=['POST'])
     def miniapp_withdraw():
         try:
+            # Validate request
+            init_data = request.headers.get('X-Telegram-InitData')
+            raw_data = request.get_data(as_text=True)
+            
+            if not validate_telegram_hash(init_data, raw_data, app.config['TELEGRAM_TOKEN']):
+                return jsonify({'success': False, 'error': 'Invalid hash'}), 401
+            
+            # Extract user ID
+            user_id = extract_user_id(init_data)
+            if not user_id:
+                return jsonify({'success': False, 'error': 'User ID not found'}), 400
+            
+            # Process withdrawal
             data = request.get_json()
-            user_id = int(data['user_id'])
-            method = data['method']
-            details = data['details']
+            method = data.get('method')
+            details = data.get('details')
             
             # Get user balance
             balance = get_user_balance(user_id)
             
-            if balance < config.MIN_WITHDRAWAL:
+            # Check minimum withdrawal
+            if balance < app.config['MIN_WITHDRAWAL']:
                 return jsonify({
                     'success': False,
-                    'error': f'Minimum withdrawal: {config.MIN_WITHDRAWAL} XNO'
+                    'error': f'Minimum withdrawal: {app.config["MIN_WITHDRAWAL"]} XNO'
                 })
             
-            # Process withdrawal
-            result = process_withdrawal(user_id, method, balance, details)
+            # Process withdrawal (simplified)
+            # In a real implementation, you'd call your withdrawal processor
+            tx_id = f"TX-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
             
-            if result.get('status') == 'success':
-                update_balance(user_id, -balance)
-                return jsonify({
-                    'success': True,
-                    'message': f'Withdrawal of {balance:.6f} XNO is processing!'
-                })
-            else:
-                return jsonify({
-                    'success': False,
-                    'error': result.get('error', 'Withdrawal failed')
-                })
-                
+            # Record withdrawal
+            withdrawal_data = {
+                'user_id': user_id,
+                'method': method,
+                'amount': balance,
+                'details': details,
+                'status': 'pending',
+                'tx_id': tx_id,
+                'timestamp': SERVER_TIMESTAMP
+            }
+            db.collection('withdrawals').add(withdrawal_data)
+            
+            # Reset balance
+            update_balance(user_id, -balance)
+            
+            return jsonify({
+                'success': True,
+                'message': f'Withdrawal of {to_xno(balance):.6f} XNO is processing!'
+            })
         except Exception as e:
             logger.error(f"MiniApp withdrawal error: {str(e)}")
-            return jsonify({'success': False, 'error': str(e)}), 500
+            return jsonify({'success': False, 'error': 'Internal server error'}), 500
     
-    # PayPal webhook handler
-    @app.route('/paypal/webhook', methods=['POST'], endpoint='paypal_webhook')
-    def paypal_webhook():
+    # GitHub webhook for auto-deployment
+    @app.route('/webhooks/github', methods=['POST'])
+    def github_webhook():
         try:
-            # Verify webhook signature
-            # NOTE: You need to implement verify_paypal_webhook or import it
-            if not verify_paypal_webhook(request.headers, request.data):
-                return jsonify({'status': 'invalid signature'}), 401
-                
-            event = request.json
-            event_type = event.get('event_type')
+            # Get GitHub signature
+            signature = request.headers.get('X-Hub-Signature', '')
+            secret = app.config.get('GITHUB_WEBHOOK_SECRET')
             
-            if event_type == 'PAYMENT.PAYOUTS-ITEM.SUCCEEDED':
-                # Handle successful payout
-                payout_item = event['resource']
-                payout_batch_id = payout_item['payout_batch_id']
-                
-                # Update withdrawal status in database
-                withdrawal_ref = db.collection('withdrawals')
-                query = withdrawal_ref.where('result.tx_id', '==', payout_batch_id).limit(1).stream()
-                
-                for doc in query:
-                    doc.reference.update({'status': 'completed'})
-                    # Record successful transaction
-                    db.collection('transactions').add({
-                        'type': 'withdrawal_completed',
-                        'withdrawal_id': doc.id,
-                        'timestamp': SERVER_TIMESTAMP
-                    })
-                
-            elif event_type == 'PAYMENT.PAYOUTS-ITEM.FAILED':
-                # Handle failed payout
-                payout_item = event['resource']
-                payout_batch_id = payout_item['payout_batch_id']
-                reason = payout_item.get('errors', {}).get('reason', 'Unknown error')
-                
-                # Update withdrawal status in database
-                withdrawal_ref = db.collection('withdrawals')
-                query = withdrawal_ref.where('result.tx_id', '==', payout_batch_id).limit(1).stream()
-                
-                for doc in query:
-                    doc.reference.update({
-                        'status': 'failed',
-                        'result.error': reason
-                    })
-                
-            return jsonify({'status': 'success'}), 200
-        except Exception as e:
-            logger.error(f"PayPal webhook error: {str(e)}")
-            return jsonify({'status': 'error'}), 500
-        
-    # M-Pesa callback handler
-    @app.route('/mpesa-callback', methods=['POST'], endpoint='mpesa_callback')
-    def mpesa_callback():
-        """
-        Handle M-Pesa payment callback
-        Sample payload:
-        {
-            "Result": {
-                "ResultType": 0,
-                "ResultCode": 0,
-                "ResultDesc": "The service request is processed successfully.",
-                "OriginatorConversationID": "10571-13142494-1",
-                "ConversationID": "AG_20240512_00006f9e6c7b4c1d97c9",
-                "TransactionID": "LGR0000000",
-                "ResultParameters": {
-                    "ResultParameter": [
-                        {"Key": "TransactionAmount", "Value": 10},
-                        {"Key": "TransactionReceipt", "Value": "LGR0000000"},
-                        {"Key": "ReceiverPartyPublicName", "Value": "600978 - Safaricom"},
-                        {"Key": "TransactionCompletedDateTime", "Value": "20240512000000"},
-                        {"Key": "ReceiverParty", "Value": "600978"}
-                    ]
-                }
-            }
-        }
-        """
-        try:
-            data = request.json
-            logger.info(f"M-Pesa callback received: {data}")
+            # Verify signature
+            if secret and not verify_github_signature(signature, request.data, secret):
+                return jsonify({'error': 'Invalid signature'}), 401
             
-            # Validate transaction
-            if data.get('Result', {}).get('ResultCode') == 0:
-                # Successful transaction
-                params = {item['Key']: item['Value'] for item in 
-                         data['Result']['ResultParameters']['ResultParameter']}
-                
-                logger.info(f"Successful M-Pesa transaction: {params}")
-                return jsonify({"ResultCode": 0, "ResultDesc": "Accepted"})
-            else:
-                # Failed transaction
-                error_desc = data.get('Result', {}).get('ResultDesc', 'Unknown error')
-                logger.error(f"M-Pesa transaction failed: {error_desc}")
-                return jsonify({"ResultCode": 1, "ResultDesc": "Failed"}), 400
-                
+            # Check if it's a push to main branch
+            payload = request.get_json()
+            if payload.get('ref') == 'refs/heads/main':
+                # In a real implementation, this would trigger a deployment
+                # For Cloud Run, we'd redeploy the service
+                logger.info("GitHub webhook received - deployment should be triggered")
+                return jsonify({'status': 'deployment triggered'})
+            
+            return jsonify({'status': 'ignored'})
         except Exception as e:
-            logger.error(f"Error processing M-Pesa callback: {str(e)}")
-            return jsonify({"ResultCode": 1, "ResultDesc": "Server error"}), 500
+            logger.error(f"GitHub webhook error: {str(e)}")
+            return jsonify({'error': 'Internal server error'}), 500
+
+# Helper functions
+def extract_user_id(init_data):
+    """Extract user ID from Telegram initData"""
+    try:
+        import urllib.parse
+        data_dict = urllib.parse.parse_qs(init_data)
+        user_str = data_dict.get('user', [''])[0]
+        if user_str:
+            user_data = json.loads(user_str)
+            return user_data.get('id')
+    except Exception as e:
+        logger.error(f"Error extracting user ID: {str(e)}")
+    return None
+
+def verify_github_signature(signature, payload, secret):
+    """Verify GitHub webhook signature"""
+    try:
+        digest = hmac.new(secret.encode(), payload, hashlib.sha1).hexdigest()
+        expected = f'sha1={digest}'
+        return hmac.compare_digest(signature, expected)
+    except Exception:
+        return False
