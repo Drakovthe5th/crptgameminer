@@ -1,11 +1,32 @@
-checks:
+# .coderabbit.yaml
+review:
+  # Main analysis settings
   security: true
   performance: true
   documentation: true
   test_coverage: true
   complexity: true
+  
+  # Language-specific settings
+  languages:
+    python:
+      type_checking: true
+      linting: true
+      formatting: true
+      
+  # Custom instructions
+  instructions: |
+    Focus on:
+    - Google Cloud Run best practices
+    - Firebase integration patterns
+    - Telegram bot security
+    - Nano cryptocurrency handling
+    - Ad integration reliability
 
 ignore:
+  # Paths to exclude
   - "**/migrations/**"
   - "**/node_modules/**"
-  - "**/vendor/**"
+  - "**/__pycache__/**"
+  - "**/.venv/**"
+  - "**/tests/**"
