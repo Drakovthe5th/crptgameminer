@@ -17,7 +17,7 @@ def get_secret(secret_name, project_id):
         response = client.access_secret_version(request={"name": name})
         return response.payload.data.decode("UTF-8")
     except Exception as e:
-        logger.error(f"Error accessing secret {secret_name}: {str(e)}")
+        logger.error(f"Error accessing secret: {str(e)}")
         return os.getenv(secret_name.upper(), "")  # Fallback to environment variable
 
 def create_app():
